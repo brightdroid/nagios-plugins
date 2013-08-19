@@ -9,7 +9,7 @@ import time
 import re
 import urllib2, socket
 
-version = '1.0'
+version = '1.1'
 
 
 
@@ -37,8 +37,6 @@ def exitResult(exitCode, summary):
 	summary = "Status %d - %s" % (status['code'], summary)
     elif status['code']:
 	summary = "Status %d" % (status['code'])
-
-    # warn and crit
 
     # output and exit
     print "{nagiosStatus}: {summary} - {size} bytes in {time:.3f} second response time|time={time:.4f};{warn:.4f};{crit:.4f}; size={size:.2f}B;;;0".format(
