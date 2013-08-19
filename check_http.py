@@ -76,7 +76,7 @@ if bool(args.warn) != bool(args.crit):
     sys.exit('Warning and critical must both be given!')
 
 # warn > crit?
-if args.warn >= args.crit:
+if args.warn > 0.0 and args.warn >= args.crit:
     parser.print_help()
     sys.exit('Warning have to be smaller than critical!')
     
