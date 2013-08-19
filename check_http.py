@@ -75,8 +75,8 @@ except urllib2.HTTPError as e:
     status['summary'] = e
 
 except urllib2.URLError as e:
-    responseBody = status.summary
     status['summary'] = str(e.reason)
+
 except socket.timeout as e:
     status['summary'] = "Socket timeout"
 
