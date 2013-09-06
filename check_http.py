@@ -54,7 +54,7 @@ def exitResult(exitCode, summary):
 ### parse args
 parser = argparse.ArgumentParser(description='This plugin can check http(s) content.')
 parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + version)
-parser.add_argument('-p', '--proxy', help='Proxy to use, e.g. http://user:pass@proxy:port')
+parser.add_argument('-p', '--proxy', help='Proxy to use, e.g. user:pass@proxy:port')
 parser.add_argument('-t', '--timeout', help='Timout in seconds')
 parser.add_argument('-r', '--regex', help='Search page content for this regex')
 parser.add_argument('-s', '--size', nargs=2, metavar=('MIN', 'MAX'), help='Minimum page size required (bytes), Maximum page size required (bytes)')
