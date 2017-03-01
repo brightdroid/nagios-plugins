@@ -78,7 +78,7 @@ def exitResult(nbefore, nafter):
 parser = argparse.ArgumentParser(description='This plugin can check ssl certificates.')
 parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + version)
 parser.add_argument('-p', '--proxy', help='Proxy to use, e.g. proxy:port or user:pass@proxy:port')
-parser.add_argument('-t', '--timeout', type=int, help='Timout in seconds')
+parser.add_argument('-t', '--timeout', type=int, default=10, help='Timout in seconds (Default: 10)')
 parser.add_argument('-w', '--warning', dest='warn', type=int, default=30, help='Days until certificate expires to be in warning-state. (Default: 30)')
 parser.add_argument('-c', '--critical', dest='crit', type=int, default=0, help='Days until certificate expires to be in critical-state. (Default: 0)')
 parser.add_argument('domain', nargs='?')
