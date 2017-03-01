@@ -96,24 +96,32 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 
 
-### use proxy?
-if args.proxy:
-	proxy = re.search(r'^(?:([^:]+):([^:]*)@)?([^:]+):(.*)$', args.proxy).groups()
-	s.connect((proxy[2], int(proxy[3])))
-	CONNECT = "CONNECT %s HTTP/1.0\r\nConnection: close\r\n\r\n" % (args.domain)
-	s.send(CONNECT)
-	s.recv(4096)      
-else:
-	s.connect((args.domain, 443))
+try:
+	### use proxy?
+	if args.proxy:
+		proxy = re.search(r'^(?:([^:]+):([^:]*)@)?([^:]+):(.*)$', args.proxy).groups()
+		s.connect((proxy[2], int(proxy[3])))
+		CONNECT = "CONNECT %s HTTP/1.0\r\nConnection: close\r\n\r\n" % (args.domain)
+		s.send(CONNECT)
+		s.recv(4096)      
+	else:
+		s.connect((args.domain, 443))
 
+	### send request
+	ctx = SSL.Context(SSL.SSLv23_METHOD)
+	ctx.set_timeout(args.timeout)
+	ss = SSL.Connection(ctx, s)
+	ss.set_connect_state()
+	ss.do_handshake()
 
+except SSL.Error as e:
+	print "CRIT: Connect error - %s" % e.message[0][2]
+	sys.exit(2)
+	
 
-### send request
-ctx = SSL.Context(SSL.SSLv23_METHOD)
-ctx.set_timeout(args.timeout)
-ss = SSL.Connection(ctx, s)
-ss.set_connect_state()
-ss.do_handshake()
+except Exception as e:
+	print "CRIT: Connect error - %s" % e
+	sys.exit(2)
 
 
 
