@@ -3,7 +3,7 @@
 import argparse
 import sys
 import re
-from OpenSSL import SSL
+from OpenSSL import SSL, crypto
 import socket
 import datetime
 
@@ -12,20 +12,31 @@ version = '1.0'
 
 
 ### print status and exit with return code
-def exitResult(nbefore, nafter):
+def printCert(cert):
+	# type check
+	if not isinstance(cert, crypto.X509):
+		print "CRIT: Certificate is invalid"
+		sys.exit(2)
+
 	nagiosStatus2Text = {
 		0: "OK",
 		1: "WARN",
 		2: "CRIT"
 	}
 
+	# format expire times
+	nbefore = datetime.datetime.strptime(cert.get_notBefore(), '%Y%m%d%H%M%SZ')
+	nafter = datetime.datetime.strptime(cert.get_notAfter(), '%Y%m%d%H%M%SZ')
+
+	# calculate time diff between now and "not after"
 	now = datetime.datetime.utcnow()
 	if now > nafter:
 		diff = now - nafter
 	else:
 		diff = nafter - now
 
-	expire = {
+	certInfo = {
+		'subject': cert.get_subject().commonName,
 		'days': int(diff.days),
 		'minutes': int(diff.seconds/60),
 		'hours': int(diff.seconds/60/60),
@@ -39,26 +50,26 @@ def exitResult(nbefore, nafter):
 		summary = "Certificate is invalid"
 
 	# expired
-	elif expire['expired']:
-		summary = "Certificate expired {days} days ago".format(**expire)
+	elif certInfo['expired']:
+		summary = "Certificate '{subject}' expired {days} days ago".format(**certInfo)
 
 	# crit...
-	elif args.crit and args.crit > expire['days']:
-		if expire['days'] > 0:
-			summary = "Certificate expire in {days} days".format(**expire)
-		elif expire['hours'] > 1:
-			summary = "Certificate expire in {hours} hours".format(**expire)
+	elif args.crit and args.crit > certInfo['days']:
+		if certInfo['days'] > 0:
+			summary = "Certificate '{subject}' expires in {days} days".format(**certInfo)
+		elif certInfo['hours'] > 1:
+			summary = "Certificate '{subject}' expires in {hours} hours".format(**certInfo)
 		else:
-			summary = "Certificate expire in {minutes} minutes".format(**expire)
+			summary = "Certificate '{subject}' expires in {minutes} minutes".format(**certInfo)
 
 	# warn...
-	elif args.warn and args.warn > expire['days']:
-		summary = "Certificate expire in {days} days".format(**expire)
+	elif args.warn and args.warn > certInfo['days']:
+		summary = "Certificate '{subject}' expires in {days} days".format(**certInfo)
 		exitCode = 1
 	
 	# ok	
 	else:
-		summary = "Certificate expire {date:%Y-%m-%d, %H:%M} UTC".format(**expire)
+		summary = "Certificate '{subject}' valid until {date:%Y-%m-%d, %H:%M} UTC".format(**certInfo)
 		exitCode = 0
 
 	# output and exit
@@ -67,7 +78,7 @@ def exitResult(nbefore, nafter):
 		summary=summary,
 		warn=args.warn,
 		crit=args.crit,
-		**expire
+		**certInfo
 	)
 
 	sys.exit(exitCode)
@@ -81,6 +92,7 @@ parser.add_argument('-p', '--proxy', help='Proxy to use, e.g. proxy:port or user
 parser.add_argument('-t', '--timeout', type=int, default=10, help='Timout in seconds (Default: 10)')
 parser.add_argument('-w', '--warning', dest='warn', type=int, default=30, help='Days until certificate expires to be in warning-state. (Default: 30)')
 parser.add_argument('-c', '--critical', dest='crit', type=int, default=0, help='Days until certificate expires to be in critical-state. (Default: 0)')
+parser.add_argument('-P', '--port', type=int, default=443, help='Port to connect to (Default: 443)')
 parser.add_argument('domain', nargs='?')
 args = parser.parse_args()
 
@@ -105,7 +117,7 @@ try:
 		s.send(CONNECT)
 		s.recv(4096)      
 	else:
-		s.connect((args.domain, 443))
+		s.connect((args.domain, args.port))
 
 	### send request
 	ctx = SSL.Context(SSL.SSLv23_METHOD)
@@ -114,22 +126,24 @@ try:
 	ss.set_connect_state()
 	ss.do_handshake()
 
+except SSL.SysCallError as e:
+	print "CRIT: %s" % e[1]
+	sys.exit(2)
+
 except SSL.Error as e:
-	print "CRIT: Connect error - %s" % e.message[0][2]
+	print "CRIT: %s" % e.message[0][2]
 	sys.exit(2)
 	
 
 except Exception as e:
-	print "CRIT: Connect error - %s" % e
+	print "CRIT: %s" % e
 	sys.exit(2)
 
 
 
 ### parse cert
 cert = ss.get_peer_certificate()
-cert_nbefore = datetime.datetime.strptime(cert.get_notBefore(),'%Y%m%d%H%M%SZ')
-cert_nafter = datetime.datetime.strptime(cert.get_notAfter(),'%Y%m%d%H%M%SZ')
-exitResult(cert_nbefore, cert_nafter)
+printCert(cert)
 
 
 
