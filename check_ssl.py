@@ -126,17 +126,8 @@ try:
 	ss.set_connect_state()
 	ss.do_handshake()
 
-except SSL.SysCallError as e:
-	print "CRIT: %s" % e[1]
-	sys.exit(2)
-
-except SSL.Error as e:
-	print "CRIT: %s" % e.message[0][2]
-	sys.exit(2)
-	
-
 except Exception as e:
-	print "CRIT: %s" % e
+	print "CRIT: connect error"
 	sys.exit(2)
 
 
