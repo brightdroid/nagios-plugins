@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#
+# Copyright (c) Christoph Roeder <chris@brightdroid.com>
+#
 
 import argparse
 import sys
@@ -7,7 +10,7 @@ from OpenSSL import SSL, crypto
 import socket
 import datetime
 
-version = '1.0'
+version = '1.1'
 
 
 
